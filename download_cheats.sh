@@ -9,6 +9,6 @@ cp -rf tldr-master/pages/common/* cheats
 cd cheats
 rename .md '' *.md
 cd ..
-cp -rf cheats/* ~/.cheat
+cp -rf cheats/* ~/.cheat-tldr
 rm -rf master.zip tldr-master cheats
 
