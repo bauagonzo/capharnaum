@@ -1,0 +1,36 @@
+<% index.to_i.times do |n| %>
+---
+kind: StatefulSet
+apiVersion: apps/v1
+metadata:
+    name: <%= "#{n}-#{storageclass}-#{num}-replicas" %>
+    namespace: <%= ns %>
+spec:
+    serviceName: <%= "#{n}-#{storageclass}-#{num}-replicas" %>
+    replicas: <%= num %>
+    selector:
+        matchLabels:
+          app: <%= "#{n}-#{storageclass}-#{num}-replicas" %>
+    template:
+      metadata:
+        labels:
+          app: <%= "#{n}-#{storageclass}-#{num}-replicas" %>
+      spec:
+        containers:
+          - name: test
+            image: gcr.io/devcon-anthos/centos:latest
+            imagePullPolicy: IfNotPresent
+            command: [ "/bin/sleep", "3600" ]
+            volumeMounts:
+              - mountPath: "/data"
+                name: <%= "pvolx-#{n}" %>
+    volumeClaimTemplates:
+    - metadata:
+        name: <%= "pvolx-#{n}" %>
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: <%= storageclass %>
+        resources:
+          requests:
+            storage: 1Gi
+<% end %>

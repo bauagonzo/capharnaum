@@ -1,0 +1,36 @@
+kind: StatefulSet
+apiVersion: apps/v1
+metadata:
+    name: <%= appname %>
+    namespace: <%= ns %>
+spec:
+    serviceName: <%= appname %>
+    replicas: 1
+    selector:
+        matchLabels:
+          app: <%= appname %>
+    template:
+      metadata:
+        labels:
+          app: <%= appname %>
+      spec:
+        containers:
+          - name: test
+            image: docker.io/centos:latest
+            command: [ "/bin/sleep", "3600" ]
+            volumeMounts:
+              <% num.to_i.times do |i| %>
+              - mountPath: "/data<%= i%>"
+                name: pvolx<%= i %>
+              <% end %>
+    volumeClaimTemplates:
+    <% num.to_i.times do |i| %>
+    - metadata:
+        name: pvolx<%= i%>
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: <%= storageclass %>
+        resources:
+          requests:
+            storage: 1Gi
+    <% end %>

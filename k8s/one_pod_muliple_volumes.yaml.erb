@@ -1,0 +1,45 @@
+kind: StatefulSet
+apiVersion: apps/v1
+metadata:
+    name: <%= "#{storageclass}-#{num}-volumes" %>
+    namespace: <%= ns %>
+spec:
+    serviceName: <%= "#{storageclass}-#{num}-volumes" %>
+    replicas: 1
+    selector:
+        matchLabels:
+          app: <%= "#{storageclass}-#{num}-volumes" %>
+    template:
+      metadata:
+        labels:
+          app: <%= "#{storageclass}-#{num}-volumes" %>
+      spec:
+        containers:
+          - name: test
+            image: docker.io/centos:latest
+            command: [ "/bin/sleep", "3600" ]
+            volumeMounts:
+            <% num.to_i.times do |i| %>
+              - mountPath: "/data<%= i%>"
+                name: pvolx<%= i %><% end %>
+        volumes:
+          <% num.to_i.times do |i| %>
+          - name: pvolx<%= i %>
+            persistentVolumeClaim:
+              claimName: pvolx<%= i %><% end %>
+<% num.to_i.times do |i| %>
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: pvolx<%= i%>
+  namespace: <%= ns %>
+spec:
+  accessModes:
+  - ReadWriteOnce
+  volumeMode: Filesystem
+  resources:
+    requests:
+      storage: 2Gi
+  storageClassName: <%= storageclass %>
+<% end %>
