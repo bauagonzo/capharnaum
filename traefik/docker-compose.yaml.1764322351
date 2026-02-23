@@ -1,0 +1,99 @@
+version: '3'
+
+services:
+  traefik:
+    container_name: traefik
+    # The official v2 Traefik docker image
+    image: traefik:v2.10
+    restart: always
+    # Enables the web UI and tells Traefik to listen to docker
+    ports:
+      # The HTTP port
+      - "50080:80"
+      - "50443:443"
+      # The Web UI (enabled by --api.insecure=true)
+      - "58080:8080"
+    volumes:
+      # So that Traefik can listen to the Docker events
+      - /var/run/docker.sock:/var/run/docker.sock
+        #- /home/gonzo/dev/traefik-bestcow/traefik.toml:/etc/traefik/traefik.toml
+      - /opt/traefik/traefik.toml:/etc/traefik/traefik.toml
+      - /opt/traefik/acme.json:/etc/traefik/acme.json
+  pimkie:
+    container_name: pimkie
+    restart: always
+    image: bauagonzo/pimkie-ref:latest
+    labels:
+      - "traefik.enable=true"
+        #      - "traefik.docker.network=web"
+      - "traefik.http.routers.pimkie.rule=Host(`pimkie.bizarreisbeautiful.com`)"
+      - "traefik.http.routers.pimkie.tls=true"
+      - "traefik.http.routers.pimkie.tls.certresolver=myresolver"
+
+  pastebin:
+    container_name: pastebin
+    restart: always
+    image: bauagonzo/microbin:latest
+    command: /usr/local/bin/microbin --hide-footer --hide-logo --highlightsyntax --editable
+    labels:
+      - "traefik.enable=true"
+        #      - "traefik.docker.network=web"
+      - "traefik.http.routers.pb.rule=Host(`pb.bizarreisbeautiful.com`)"
+#      - "traefik.http.routers.pb.rule=Host(`pb.storage-chaos.io`)"
+      - "traefik.http.routers.pb.tls=true"
+      - "traefik.http.routers.pb.tls.certresolver=myresolver"
+
+  canfandf:
+    container_name: canfandf
+    restart: always
+    image: bauagonzo/canfandf:latest
+    labels:
+      - "traefik.enable=true"
+        #      - "traefik.docker.network=web"
+      - "traefik.http.routers.canfandf.rule=Host(`canfandf.bizarreisbeautiful.com`)"
+      - "traefik.http.services.canfandf.loadbalancer.server.port=9999"
+      - "traefik.http.routers.canfandf.tls=true"
+      - "traefik.http.routers.canfandf.tls.certresolver=myresolver"
+
+  truths-and-lies:
+    container_name: truths-and-lies
+    restart: always
+    image: coulof/truth-and-lie:latest
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=web"
+      - "traefik.http.routers.truths-and-lies.rule=Host(`truths-and-lies.storage-chaos.io`)"
+      - "traefik.http.routers.truths-and-lies.tls=true"
+      - "traefik.http.routers.truths-and-lies.tls.certresolver=myresolver"
+
+  electr-ai:
+    container_name: electr-ai
+    restart: always
+    image: ghcr.io/bauagonzo/electr.ai:main
+    environment:
+      - CLAUDE_API_KEY=
+      - ADMIN_PASSWORD=
+      - USE_CACHE=true
+    labels:
+      - "traefik.enable=true"
+        #      - "traefik.docker.network=web"
+      - "traefik.http.routers.electr-ai.rule=Host(`electrai.bizarreisbeautiful.com`)"
+      - "traefik.http.routers.electr-ai.tls=true"
+      - "traefik.http.routers.electr-ai.tls.certresolver=myresolver"
+
+  storage-monkey:
+    container_name: storage-monkey
+    restart: always
+    image: nginx:stable
+    labels:
+      - "traefik.enable=true"
+        #      - "traefik.docker.network=web"
+      - "traefik.http.routers.storage-monkey.rule=Host(`storage-monkey.io`)"
+      - "traefik.http.routers.storage-monkey.tls=true"
+      - "traefik.http.routers.storage-monkey.tls.certresolver=myresolver"
+    volumes:
+      - /home/bestcow/storage-monkey.io:/usr/share/nginx/html:ro
+
+networks:
+  web:
+    external: true

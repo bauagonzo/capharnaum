@@ -1,0 +1,59 @@
+version: '3'
+
+services:
+  traefik:
+    container_name: traefik
+    # The official v2 Traefik docker image
+    image: traefik:v2.2
+    restart: always
+    # Enables the web UI and tells Traefik to listen to docker
+    ports:
+      # The HTTP port
+      - "50080:80"
+      - "50443:443"
+      # The Web UI (enabled by --api.insecure=true)
+      - "58080:8080"
+    volumes:
+      # So that Traefik can listen to the Docker events
+      - /var/run/docker.sock:/var/run/docker.sock
+        #- /home/gonzo/dev/traefik-bestcow/traefik.toml:/etc/traefik/traefik.toml
+      - /opt/traefik/traefik.toml:/etc/traefik/traefik.toml
+      - /opt/traefik/acme.json:/etc/traefik/acme.json
+  pimkie:
+    container_name: pimkie
+    restart: always
+    image: bauagonzo/pimkie-ref:latest
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=web"
+      - "traefik.http.routers.pimkie.rule=Host(`pimkie.bizarreisbeautiful.com`)"
+      - "traefik.http.routers.pimkie.tls=true"
+      - "traefik.http.routers.pimkie.tls.certresolver=myresolver"
+
+  pastebin:
+    container_name: pastebin
+    restart: always
+    image: bauagonzo/microbin:latest
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=web"
+      - "traefik.http.routers.pb.rule=Host(`pb.storage-chaos.io`)"
+      - "traefik.http.routers.pb.tls=true"
+      - "traefik.http.routers.pb.tls.certresolver=myresolver"
+
+  storage-monkey:
+    container_name: storage-monkey
+    restart: always
+    image: nginx:1.19.0
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=web"
+      - "traefik.http.routers.storage-monkey.rule=Host(`storage-monkey.io`)"
+      - "traefik.http.routers.storage-monkey.tls=true"
+      - "traefik.http.routers.storage-monkey.tls.certresolver=myresolver"
+    volumes:
+      - /home/bestcow/storage-monkey.io:/usr/share/nginx/html:ro
+
+networks:
+  web:
+    external: true
